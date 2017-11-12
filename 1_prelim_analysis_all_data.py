@@ -55,7 +55,12 @@ for id in icu_admissionid_times_2:
     age = int(row['age'].values[0])
 
     if age == 0: continue
-    if age > 100 : age = 90
+
+    if age > 100 :
+        age= 90
+        row['age'].values[0] = 90
+        row['age'].values[1] = 90
+
     if days <31 :#and row['deathtime'].isnull().any(): ?? what to do with dead patient ## dont worry if patient dies during second icu visit
         ## check to get the first admission data for analysis
         if (second_admit - first_admit).days > 0:
@@ -71,12 +76,17 @@ len(patient_ids)
 
 patient_days = [x[2]for x in final_patients]
 p = {x:patient_days.count(x) for x in patient_days}
-x, y = p.keys(), p.values()
-plt.plot(x,y,'ro')
+plt.bar(p.keys(), p.values(), color='b')
 #plt.boxplot(x,y)
-plt.xlabel('Days')
-plt.ylabel('Patient')
+plt.xlabel('Interval days for second ICU admission')
+plt.ylabel('Patient count')
 plt.show()
+
+### make box plot of days
+
+
+
+
 #
 # from scipy.interpolate import interp1d
 # f = interp1d(x, y)
@@ -84,10 +94,9 @@ plt.show()
 
 patient_age = [x[1]for x in final_patients]
 p = {x:patient_age.count(x) for x in patient_age}
-x, y = p.keys(), p.values()
-plt.plot(x,y,'ro')
-plt.xlabel(' Age')
-plt.ylabel('Patient ')
+plt.bar(p.keys(), p.values(), color='b')
+plt.xlabel(' Age of patients with two ICU admission')
+plt.ylabel('Patient count ')
 plt.show()
 
 
@@ -102,11 +111,13 @@ df_icu_admission_times_2.head()
 # le.transform(df_icu_admission_times_2['gender'])
 df_icu_admission_times_2['gender'].value_counts()
 df_icu_admission_times_2['marital_status'].value_counts()
-df_icu_admission_times_2.drop(['marital_status'], axis=1, inplace=True)
-cleanup_nums = {"gender": {"M": 1, "F": 0}}
+#df_icu_admission_times_2.drop(['marital_status'], axis=1, inplace=True)
+cleanup_nums = {"gender": {"M":1.0, "F": 0.0},
+                "marital_status" : {"MARRIED":1.0, "SINGLE":2.0,"WIDOWED":3.0, "DIVORCED":4.0, "SEPARATED":5.0,"UNKNOWN(DEFAULT)":6.0}}
 df_icu_admission_times_2.replace(cleanup_nums, inplace=True)
-df_icu_admission_times_2['readmit'] = 'yes'
+df_icu_admission_times_2['readmit'] = 1.0
 df_icu_admission_times_2.head()
+df_icu_admission_times_2.fillna(df_icu_admission_times_2.mean(),inplace=True)
 df_icu_admission_times_2.to_csv("icu_admission_times_2.csv", index=False)
 
 
@@ -124,8 +135,12 @@ for id in icu_admissionid_only_1:
 
     age = int(row['age'].values[0])
 
-    if age > 100 : age = 90
-    if age ==0:continue
+    if age == 0: continue
+
+    if age > 100 :
+        age = 90
+        row['age'].values[0] = 90
+
 
     if row['deathtime'].isnull().any():
         icu_admission_times_1.append(row.values[0])
@@ -140,12 +155,13 @@ len(patient_ids_control)
 
 
 patient_age_c = [x[1]for x in final_patients_control]
-p = {x:patient_age_c.count(x) for x in patient_age_c}
-x, y = p.keys(), p.values()
-plt.plot(x,y,'ro')
-plt.xlabel(' Age')
-plt.ylabel('Patient ')
+pc = {x:patient_age_c.count(x) for x in patient_age_c}
+plt.bar(pc.keys(), pc.values(), color='g')
+plt.xlabel('Age of patients with one ICU admission ')
+plt.ylabel('Patient count ')
 plt.show()
+
+## try age overlay
 
 
 df_icu_admission_times_2.head(2)
@@ -153,9 +169,23 @@ df_icu_admission_times_1.drop(['hadm_id','admittime','dischtime','deathtime','fi
 df_icu_admission_times_1.head()
 df_icu_admission_times_1['gender'].value_counts()
 df_icu_admission_times_1['marital_status'].value_counts()
-df_icu_admission_times_1.drop(['marital_status'], axis=1, inplace=True)
-cleanup_nums = {"gender": {"M": 1, "F": 0}}
+cleanup_nums = {"gender": {"M": 1, "F": 0},
+                "marital_status" : {"MARRIED": 1 , "SINGLE":2 ,"WIDOWED":3 , "DIVORCED":4 , "SEPARATED":5 ,"UNKNOWN(DEFAULT)": 6}}
 df_icu_admission_times_1.replace(cleanup_nums, inplace=True)
-df_icu_admission_times_1['readmit'] = 'no'
+df_icu_admission_times_1['readmit'] = 0.0
+#df_icu_admission_times_1['albumin_min']
+df_icu_admission_times_1.fillna(df_icu_admission_times_1.mean(),inplace=True)
 df_icu_admission_times_1.head()
 df_icu_admission_times_1.to_csv("icu_admission_times_1.csv", index=False)
+
+frames = [df_icu_admission_times_1,df_icu_admission_times_2]
+
+df_icu_admission_combine = pd.concat(frames)
+
+len(df_icu_admission_combine)
+
+
+## shuffle rows
+df_icu_admission_combine = df_icu_admission_combine.sample(frac=1).reset_index(drop=True)
+
+df_icu_admission_combine.to_csv("df_icu_admission_combine.csv", index=False)
