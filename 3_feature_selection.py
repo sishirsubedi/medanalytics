@@ -6,6 +6,7 @@ import numpy as np
 import math
 import collections
 import seaborn as sns
+import statsmodels.api as sm
 
 
 df_all_data = pd.read_csv("df_icu_admission_combine.csv",sep=',',header=0)#,index_col=0)
@@ -67,7 +68,6 @@ print(features[0:5,:])
 
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LogisticRegression
-import statsmodels.api as sm
 from sklearn.svm import LinearSVC
 from xgboost.sklearn import XGBClassifier
 
@@ -151,7 +151,7 @@ xmat_filt_test = X_test.iloc[:, [x for x,d in enumerate(rfe.ranking_) if d ==1]]
 
 
 
-C = [10, 1, .1, .01,0.001]
+#C = [10, 1, .1, .01,0.001]
 C = np.arange(0.001, 1.0, 0.01)
 
 
@@ -159,22 +159,39 @@ stat =  []
 for c in C:
     clf = LogisticRegression(penalty='l1', C=c)
     clf.fit(X_train, y_train)
-    print('C:', c)
-    print('Coefficient of each feature:', clf.coef_)
-    print('Training accuracy:', clf.score(X_train, y_train))
-    print('Test accuracy:', clf.score(X_test, y_test))
-    print('')
+    # print('C:', c)
+    # print('Coefficient of each feature:', clf.coef_)
+    # print('Training accuracy:', clf.score(X_train, y_train))
+    # print('Test accuracy:', clf.score(X_test, y_test))
+    # print('')
 
-    stat.append([c,np.count_nonzero(clf.coef_[0]),clf.score(X_train, y_train),clf.score(X_test, y_test)])
+    #xmat_filt = X_train.iloc[:, [x for x,d in enumerate(rfe.ranking_) if d ==1]]
+
+    xmat_filt = X_train.iloc[:, [x for x in np.flatnonzero(clf.coef_[0])]]
+
+    if xmat_filt.shape[1]==0:continue
+    logit = sm.Logit(y_train, xmat_filt)
+    results = logit.fit()
+
+    stat.append([c,np.count_nonzero(clf.coef_[0]),clf.score(X_train, y_train),clf.score(X_test, y_test),results.prsquared])
 
 cvals = [x[0] for x in stat]
 coefs = [x[1] for x in stat]
 train_ac = [x[2] for x in stat]
 test_ac = [x[3] for x in stat]
-plt.plot(cvals,coefs,'ro-',label='non-zero coefs')
+rsq = [x[4] for x in stat]
+
+plt.plot(cvals,rsq,'bo-',label='')
+plt.ylabel('McFaddens pseudo R-squared')
+plt.xlabel('C-value:Inverse of regularization strength')
+plt.legend()
+
+plt.plot(cvals,coefs,'ro-')
 plt.ylabel('Number of non zero coefficients')
 plt.xlabel('C-value:Inverse of regularization strength')
 plt.legend()
+
+
 plt.plot(cvals,train_ac,'ro-',label='train_acc')
 plt.plot(cvals,test_ac,'bo-',label='test_acc')
 plt.ylabel('Accuracy score')
