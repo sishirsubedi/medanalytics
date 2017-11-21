@@ -29,6 +29,9 @@ df_ydata.head(2)
 from sklearn.model_selection import train_test_split
 
 X_train, X_test, y_train, y_test = train_test_split( df_n_xdata, df_ydata, test_size=0.33, random_state=42)
+y_train = pd.DataFrame(y_train)
+y_test = pd.DataFrame(y_test)
+
 
 X_train.shape
 y_train.shape
@@ -84,7 +87,19 @@ for k in range(1,34):
     logit = sm.Logit(y_train, xmat_filt)
     results = logit.fit()
 
-    xgboost_rs.append(results.prsquared)
+    yhat = pd.DataFrame(results.predict(xmat_filt), columns=['predict'])
+
+    yhat['predict'] = yhat['predict'].apply(lambda x: 0.0 if x < 0.5 else 1.0)
+
+    match = 0.0
+    for m in range(0, len(yhat)):
+        if yhat.iloc[m].values == y_train.iloc[m].values: match += 1
+
+    match = match / len(yhat)
+
+    # xgboost_rs.append(results.prsquared)
+
+    xgboost_rs.append(match)
 
 
 model = LinearSVC()
@@ -99,8 +114,19 @@ for k in range(1,34):
     logit = sm.Logit(y_train, xmat_filt)
     results = logit.fit()
 
-    lsv_rs.append(results.prsquared)
+    yhat = pd.DataFrame(results.predict(xmat_filt), columns=['predict'])
 
+    yhat['predict'] = yhat['predict'].apply(lambda x: 0.0 if x < 0.5 else 1.0)
+
+    match = 0.0
+    for m in range(0, len(yhat)):
+        if yhat.iloc[m].values == y_train.iloc[m].values: match += 1
+
+    match = match / len(yhat)
+
+    #lsv_rs.append(results.prsquared)
+
+    lsv_rs.append(match)
 
 model = LogisticRegression()
 logr_rs = []
@@ -114,7 +140,19 @@ for k in range(1,34):
     logit = sm.Logit(y_train, xmat_filt)
     results = logit.fit()
 
-    logr_rs.append(results.prsquared)
+    yhat = pd.DataFrame(results.predict(xmat_filt),columns=['predict'])
+
+    yhat['predict'] = yhat['predict'].apply(lambda x: 0.0 if x < 0.5 else 1.0 )
+
+    match =0.0
+    for m in range(0,len(yhat)):
+        if yhat.iloc[m].values == y_train.iloc[m].values : match += 1
+
+    match = match/len(yhat)
+
+    #logr_rs.append(results.prsquared)
+
+    logr_rs.append(match)
 
 
 plt.rcParams.update({'font.size': 15})
@@ -124,7 +162,7 @@ plt.plot(logr_rs,'bo-',label='logisticR')
 plt.legend()
 plt.xlim([1,35])
 plt.xlabel('Number of features in the model')
-plt.ylabel('McFaddens pseudo R-squared')
+plt.ylabel('Accuracy on training set')
 plt.title('Feature selection using recursive feature elimination')
 
 
@@ -173,7 +211,23 @@ for c in C:
     logit = sm.Logit(y_train, xmat_filt)
     results = logit.fit()
 
-    stat.append([c,np.count_nonzero(clf.coef_[0]),clf.score(X_train, y_train),clf.score(X_test, y_test),results.prsquared])
+
+    yhat = pd.DataFrame(results.predict(xmat_filt),columns=['predict'])
+
+    yhat['predict'] = yhat['predict'].apply(lambda x: 0.0 if x < 0.5 else 1.0 )
+
+    match =0.0
+    for m in range(0,len(yhat)):
+        if yhat.iloc[m].values == y_train.iloc[m].values : match += 1
+
+    match = match/len(yhat)
+
+    #logr_rs.append(results.prsquared)
+
+
+    #stat.append([c,np.count_nonzero(clf.coef_[0]),clf.score(X_train, y_train),clf.score(X_test, y_test),results.prsquared])
+
+    stat.append([c,np.count_nonzero(clf.coef_[0]),clf.score(X_train, y_train),clf.score(X_test, y_test),match])
 
 cvals = [x[0] for x in stat]
 coefs = [x[1] for x in stat]
@@ -182,7 +236,7 @@ test_ac = [x[3] for x in stat]
 rsq = [x[4] for x in stat]
 
 plt.plot(cvals,rsq,'bo-',label='')
-plt.ylabel('McFaddens pseudo R-squared')
+plt.ylabel('Accuracy on training set')
 plt.xlabel('C-value:Inverse of regularization strength')
 plt.legend()
 
