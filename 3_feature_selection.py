@@ -7,12 +7,16 @@ import math
 import collections
 import seaborn as sns
 import statsmodels.api as sm
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from xgboost.sklearn import XGBClassifier
 
 
 df_all_data = pd.read_csv("df_icu_admission_combine.csv",sep=',',header=0)#,index_col=0)
 len(df_all_data)
 df_all_data.head(2)
-df_xdata = df_all_data.loc[:,'age':'urine_max']
+df_xdata = df_all_data.loc[:,'age':'marital_status_WIDOWED']
 df_n_xdata= (df_xdata-df_xdata.mean())/df_xdata.std()
 df_n_xdata.mean()
 df_n_xdata.head(20)
@@ -69,15 +73,53 @@ print(features[0:5,:])
 # individual is predicted the same probability of 'success').
 # '''
 
-from sklearn.feature_selection import RFE
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import LinearSVC
-from xgboost.sklearn import XGBClassifier
+################# get feature ranking
+
+k=1
+model = XGBClassifier()
+rfe = RFE(model, k)
+rfe = rfe.fit(X_train,y_train )
+xgboost_ranking =[]
+for x,d in zip(rfe.ranking_,X_train.columns):
+    xgboost_ranking.append([d,x])
+xgboost_ranking = pd.DataFrame(xgboost_ranking,columns=['features','xgboost'])
+xgboost_ranking.sort_values('xgboost',inplace=True)
+
+
+model = LinearSVC()
+rfe = RFE(model, k)
+rfe = rfe.fit(X_train,y_train )
+lsvc_ranking =[]
+for x,d in zip(rfe.ranking_,X_train.columns):
+    lsvc_ranking.append([d,x])
+lsvc_ranking = pd.DataFrame(lsvc_ranking,columns=['features','lsvc'])
+lsvc_ranking.sort_values('lsvc',inplace=True)
+
+
+model = LogisticRegression()
+rfe = RFE(model, k)
+rfe = rfe.fit(X_train,y_train )
+logr_ranking =[]
+for x,d in zip(rfe.ranking_,X_train.columns):
+    logr_ranking.append([d,x])
+logr_ranking = pd.DataFrame(logr_ranking,columns=['features','logr'])
+logr_ranking.sort_values('logr',inplace=True)
+
+
+
+df_all_ranking = pd.concat([xgboost_ranking,lsvc_ranking,logr_ranking],ignore_index=True)
+
+df_all_ranking.to_csv("df_all_ranking.csv", index=False)
+
+
+
+###################
+
 
 
 model = XGBClassifier()
 xgboost_rs = []
-for k in range(1,34):
+for k in range(1,30):
 
     rfe = RFE(model, k)
     rfe = rfe.fit(X_train,y_train )
@@ -104,7 +146,7 @@ for k in range(1,34):
 
 model = LinearSVC()
 lsv_rs = []
-for k in range(1,34):
+for k in range(1,30):
 
     rfe = RFE(model, k)
     rfe = rfe.fit(X_train,y_train )
@@ -130,7 +172,7 @@ for k in range(1,34):
 
 model = LogisticRegression()
 logr_rs = []
-for k in range(1,34):
+for k in range(1,30):
 
     rfe = RFE(model, k)
     rfe = rfe.fit(X_train,y_train )
@@ -160,7 +202,7 @@ plt.plot(xgboost_rs,'go-',label='xgboost')
 plt.plot(lsv_rs,'ro-',label='linearSV')
 plt.plot(logr_rs,'bo-',label='logisticR')
 plt.legend()
-plt.xlim([1,35])
+plt.xlim([1,30])
 plt.xlabel('Number of features in the model')
 plt.ylabel('Accuracy on training set')
 plt.title('Feature selection using recursive feature elimination')
