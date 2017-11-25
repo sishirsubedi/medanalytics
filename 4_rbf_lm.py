@@ -61,9 +61,11 @@ logr_ranking = pd.DataFrame(logr_ranking,columns=['features','logr'])
 logr_ranking.sort_values('logr',inplace=True)
 
 
-todrop = logr_ranking.iloc[4: ,0]
+todrop = logr_ranking.iloc[10: ,0]
 df_all_data.drop(todrop, axis=1, inplace=True)
 df_all_data.shape
+
+df_all_data.to_csv("test_data.csv",index=False)
 
 len(df_all_data)
 df_all_data.head(2)
