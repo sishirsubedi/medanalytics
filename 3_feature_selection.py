@@ -150,7 +150,7 @@ for k in range(1,121):
 
     match = 0.0
     for m in range(0, len(yhat)):
-        if yhat.iloc[m].values == y_train0.iloc[m].values: match += 1
+        if yhat.iloc[m].values == y_cv.iloc[m].values: match += 1
 
     match = match / len(yhat)
 
