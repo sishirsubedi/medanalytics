@@ -13,7 +13,7 @@ len(df_all_data)
 df_all_data.head(2)
 df_xdata = df_all_data.loc[:,'age':'marital_status_WIDOWED']
 df_n_xdata= (df_xdata-df_xdata.mean())/df_xdata.std()
-df_n_xdata.mean()
+#df_n_xdata.mean()
 df_n_xdata.head(20)
 
 corr_matrix = df_n_xdata.corr()
@@ -30,7 +30,7 @@ for i in range(len(corr_matrix)):
         cormat_melted.append([f1, f2, corr_matrix.iloc[i,j]])
 cormat_melted = pd.DataFrame(cormat_melted,columns=['f1','f2','values'])
 cormat_melted.head(5)
-cormat_melted_filt = cormat_melted.loc[(cormat_melted['values']>=0.75) & (cormat_melted['values'] !=1.0)]
+cormat_melted_filt = cormat_melted.loc[(cormat_melted['values']>=0.80) & (cormat_melted['values'] !=1.0)]
 todrop = set(cormat_melted_filt['f2'])
 len(todrop)
 
@@ -39,7 +39,8 @@ df_all_data.drop(todrop, axis=1, inplace=True)
 
 df_all_data.head(2)
 df_all_data.shape
-#df_all_data.to_csv("df_icu_admission_combine_corfilt.csv", index=False)
+
+df_all_data.to_csv("df_icu_admission_combine_corfilt.csv", index=False)
 
 df_xdata = df_all_data.loc[:,'age':'marital_status_WIDOWED']
 df_n_xdata= (df_xdata-df_xdata.mean())/df_xdata.std()

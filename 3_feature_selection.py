@@ -13,8 +13,9 @@ from sklearn.svm import LinearSVC
 from xgboost.sklearn import XGBClassifier
 
 
-df_all_data = pd.read_csv("df_icu_admission_combine.csv",sep=',',header=0)#,index_col=0)
+df_all_data = pd.read_csv("df_icu_admission_combine_corfilt.csv",sep=',',header=0)#,index_col=0)
 len(df_all_data)
+df_all_data.shape
 df_all_data.head(2)
 df_xdata = df_all_data.loc[:,'age':'marital_status_WIDOWED']
 df_n_xdata= (df_xdata-df_xdata.mean())/df_xdata.std()
@@ -33,13 +34,12 @@ df_ydata.head(2)
 from sklearn.model_selection import train_test_split
 
 X_train, X_test, y_train, y_test = train_test_split( df_n_xdata, df_ydata, test_size=0.33, random_state=42)
+print "Ratio in training", str(sum(y_train==1.0) * 100 /len(y_train))
+print "Ratio in test", str(sum(y_test==1.0) * 100 /len(y_test))
+
+
 y_train = pd.DataFrame(y_train)
-y_test = pd.DataFrame(y_test)
-
-
-X_train.shape
-y_train.shape
-
+X_train = pd.DataFrame(X_train)
 
 
 ############# cannot do chitest for feature selection because of negative values as this is centered
@@ -76,14 +76,26 @@ print(features[0:5,:])
 ################# get feature ranking
 
 k=1
+
+model = LogisticRegression()
+rfe = RFE(model, k)
+rfe = rfe.fit(X_train,y_train )
+logr_ranking =[]
+for x,d in zip(rfe.ranking_,X_train.columns):
+    logr_ranking.append([d,x])
+logr_ranking = pd.DataFrame(logr_ranking,columns=['features1','logr'])
+logr_ranking.sort_values('features1',inplace=True)
+
+
+
 model = XGBClassifier()
 rfe = RFE(model, k)
 rfe = rfe.fit(X_train,y_train )
 xgboost_ranking =[]
 for x,d in zip(rfe.ranking_,X_train.columns):
     xgboost_ranking.append([d,x])
-xgboost_ranking = pd.DataFrame(xgboost_ranking,columns=['features','xgboost'])
-xgboost_ranking.sort_values('xgboost',inplace=True)
+xgboost_ranking = pd.DataFrame(xgboost_ranking,columns=['features2','xgboost'])
+xgboost_ranking.sort_values('features2',inplace=True)
 
 
 model = LinearSVC()
@@ -92,24 +104,84 @@ rfe = rfe.fit(X_train,y_train )
 lsvc_ranking =[]
 for x,d in zip(rfe.ranking_,X_train.columns):
     lsvc_ranking.append([d,x])
-lsvc_ranking = pd.DataFrame(lsvc_ranking,columns=['features','lsvc'])
-lsvc_ranking.sort_values('lsvc',inplace=True)
+lsvc_ranking = pd.DataFrame(lsvc_ranking,columns=['features3','lsvc'])
+lsvc_ranking.sort_values('features3',inplace=True)
 
 
-model = LogisticRegression()
-rfe = RFE(model, k)
-rfe = rfe.fit(X_train,y_train )
-logr_ranking =[]
-for x,d in zip(rfe.ranking_,X_train.columns):
-    logr_ranking.append([d,x])
-logr_ranking = pd.DataFrame(logr_ranking,columns=['features','logr'])
-logr_ranking.sort_values('logr',inplace=True)
+logr_ranking.head(1)
+xgboost_ranking.head(1)
+lsvc_ranking.head(1)
+
+xgboost_ranking.to_csv("xgboost_ranking.csv", index=False)
+lsvc_ranking.to_csv("lsvc_ranking.csv", index=False)
+logr_ranking.to_csv("logr_ranking.csv", index=False)
 
 
 
-df_all_ranking = pd.concat([xgboost_ranking,lsvc_ranking,logr_ranking],ignore_index=True)
+feature_sum = logr_ranking['logr']+ xgboost_ranking['xgboost']+lsvc_ranking['lsvc']
+df_ranked =  pd.concat([logr_ranking['features1'],feature_sum],axis=1)
+df_ranked.head(2)
+len(df_ranked)
+df_ranked.sort_values(0,inplace=True)
+df_ranked.head(20)
 
-df_all_ranking.to_csv("df_all_ranking.csv", index=False)
+
+
+X_train0, X_cv, y_train0, y_cv = train_test_split( X_train, y_train, test_size=0.20, random_state=42)
+print  sum(y_train0['readmit']==1.0) * 100 /len(y_train0)
+print  sum(y_cv['readmit']==1.0) * 100 /len(y_cv)
+
+
+y_train0 = pd.DataFrame(y_train0)
+X_train0 = pd.DataFrame(X_train0)
+
+
+############### select best k
+df_ranked.head(2)
+
+
+ranked_list = list(df_ranked['features1'])
+
+X_train0.head(2)
+X_train0_sorted = X_train0[ranked_list]
+X_train0_sorted.head(2)
+
+
+X_cv.head(2)
+X_cv_sorted = X_cv[ranked_list]
+X_cv_sorted.head(2)
+
+accuracy = []
+
+for k in range(1,30):
+
+    x_train_filt = X_train0_sorted.iloc[:,0:k]
+
+    logit = sm.Logit(y_train0, x_train_filt)
+
+    results = logit.fit()
+
+    yhat = pd.DataFrame(results.predict(X_cv_sorted.iloc[:,0:k]), columns=['predict'])
+
+
+    yhat['predict'] = yhat['predict'].apply(lambda x: 0.0 if x < 0.5 else 1.0)
+
+    match = 0.0
+    for m in range(0, len(yhat)):
+        if yhat.iloc[m].values == y_train.iloc[m].values: match += 1
+
+    match = match / len(yhat)
+
+    accuracy.append(match)
+
+plt.rcParams.update({'font.size': 15})
+plt.plot(accuracy,'bo-',label='logisticR')
+plt.legend()
+plt.xlim(range(1,30))
+plt.xlabel('Number of features in the model')
+plt.ylabel('Accuracy on training set')
+plt.title('Feature selection using recursive feature elimination')
+
 
 
 

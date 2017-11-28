@@ -169,7 +169,7 @@ class RBFNet(object):
                 F = a.T.dot(self.w) + self.b
 
                 #yi = np.array([0.5 if y[i] == 0.0 else 1.0])
-                loss = -(y[0] - F) .flatten()
+                loss = -(y[i] - F) .flatten()
                 #print('Loss: {0:.2f}'.format(loss[0]))
 
                 # backward pass

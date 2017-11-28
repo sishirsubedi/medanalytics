@@ -7,11 +7,11 @@ import math
 import collections
 
 
+df_all_data = pd.read_csv("df_final.csv",sep=',',header=0)#,index_col=0)
+df_all_data.head(2)
+#df_all_data.drop(['Unnamed: 0', 'Unnamed: 0.1'],axis=1,inplace=True)
+#df_all_data.head(2)
 
-df_all_data = pd.read_csv("cleaned_master.csv",sep=',',header=0)#,index_col=0)
-df_all_data.head(2)
-df_all_data.drop(['Unnamed: 0', 'Unnamed: 0.1'],axis=1,inplace=True)
-df_all_data.head(2)
 len(df_all_data)
 
 df_all_data['admittime'].isnull().value_counts()
@@ -71,6 +71,9 @@ df_all_data.shape
 
 #########################################################################
 
+df_all_data.shape
+
+df_all_data.loc[:,'subject_id'].nunique()
 
 all_patients = df_all_data.iloc[:,0].values
 
@@ -91,7 +94,7 @@ plt.show()
 len(patient_freq)
 
 
-## get patients with two readmission
+## get patients with two or more readmission
 icu_admissionid_times_2 = [k for k in patient_freq if patient_freq[k] >=2]
 len(icu_admissionid_times_2)
 
@@ -166,40 +169,45 @@ df_icu_admission_times_2= pd.DataFrame(icu_admission_times_2,columns=df_all_data
 df_icu_admission_times_2.head(2)
 
 df_icu_admission_times_2.drop(['hadm_id','admittime','dischtime','first_careunit','last_careunit','insurance'], axis=1, inplace=True)
-df_icu_admission_times_2.head()
+df_icu_admission_times_2.head(2)
+df_icu_admission_times_2.shape
+#df_icu_admission_times_2.to_csv("icu_admission_times_2.csv", index=False)
+
 # from sklearn import preprocessing
 # le = preprocessing.LabelEncoder()
 # le.fit(df_icu_admission_times_2['gender'])
 # le.transform(df_icu_admission_times_2['gender'])
-df_icu_admission_times_2['gender'].value_counts()
-df_icu_admission_times_2['marital_status'].value_counts()
+# df_icu_admission_times_2['gender'].value_counts()
+# df_icu_admission_times_2['marital_status'].value_counts()
 
 ##### this is for label encoding ##########
-cleanup_nums = {"gender": {"M":1.0, "F": 0.0},
-                "marital_status" : {"MARRIED":1.0, "SINGLE":2.0,"WIDOWED":3.0, "DIVORCED":4.0, "SEPARATED":5.0,"UNKNOWN(DEFAULT)":6.0}}
-df_icu_admission_times_2.replace(cleanup_nums, inplace=True)
-
-################## this is for hot encoding
-
+# cleanup_nums = {"gender": {"M":1.0, "F": 0.0},
+#                 "marital_status" : {"MARRIED":1.0, "SINGLE":2.0,"WIDOWED":3.0, "DIVORCED":4.0, "SEPARATED":5.0,"UNKNOWN(DEFAULT)":6.0}}
+# df_icu_admission_times_2.replace(cleanup_nums, inplace=True)
+#
+# ################## this is for hot encoding
+#
 df_icu_admission_times_2.head(2)
 df_icu_admission_times_2= pd.get_dummies(df_icu_admission_times_2,columns=['gender','marital_status'],drop_first=False)
 df_icu_admission_times_2.head(2)
-
+#
 df_icu_admission_times_2.drop(['marital_status_UNKNOWN(DEFAULT)'], axis=1, inplace=True)
-
+#
 df_icu_admission_times_2['readmit'] = 1.0
-df_icu_admission_times_2.head()
+df_icu_admission_times_2.head(2)
 len(df_icu_admission_times_2)
-df_icu_admission_times_2.to_csv("icu_admission_times_2.csv", index=False)
+df_icu_admission_times_2.shape
 
+# df_icu_admission_times_2.to_csv("icu_admission_times_2.csv", index=False)
+#
 
 
 icu_admissionid_only_1 = [k for k in patient_freq if patient_freq[k] ==1]
 len(icu_admissionid_only_1)
-random.seed(1)
 
-icu_admissionid_only_1 = random.sample(icu_admissionid_only_1, len(df_icu_admission_times_2))
-len(icu_admissionid_only_1)
+#random.seed(1)
+# icu_admissionid_only_1 = random.sample(icu_admissionid_only_1, len(df_icu_admission_times_2))
+# len(icu_admissionid_only_1)
 
 final_patients_control =[]
 icu_admission_times_1 =[]
@@ -222,6 +230,8 @@ for id in icu_admissionid_only_1:
 
 df_icu_admission_times_1= pd.DataFrame(icu_admission_times_1,columns=df_all_data.columns.values)
 len(df_icu_admission_times_1)
+df_icu_admission_times_1.shape
+
 
 patient_ids_control = [x[0]for x in final_patients_control]
 len(patient_ids_control)
@@ -234,24 +244,31 @@ plt.xlabel('Age of patients with one ICU admission ')
 plt.ylabel('Patient count ')
 plt.show()
 
-## try age overlay
-
 
 df_icu_admission_times_1.head(2)
 df_icu_admission_times_1.drop(['hadm_id','admittime','dischtime','first_careunit','last_careunit','insurance'], axis=1, inplace=True)
 df_icu_admission_times_1.head()
-
+df_icu_admission_times_1.shape
 
 df_icu_admission_times_1.head(2)
 df_icu_admission_times_1= pd.get_dummies(df_icu_admission_times_1,columns=['gender','marital_status'],drop_first=False)
 df_icu_admission_times_1.head(2)
-
 df_icu_admission_times_1.drop(['marital_status_UNKNOWN(DEFAULT)'], axis=1, inplace=True)
 
+df_icu_admission_times_1.drop(['marital_status_LIFEPARTNER'], axis=1, inplace=True)
+
 df_icu_admission_times_1['readmit'] = 0.0
-df_icu_admission_times_1.head()
+df_icu_admission_times_1.head(2)
+df_icu_admission_times_1.shape
 len(df_icu_admission_times_1)
 df_icu_admission_times_1.to_csv("icu_admission_times_1.csv", index=False)
+
+
+##############################################################
+
+
+df_icu_admission_times_2.shape
+df_icu_admission_times_1.shape
 
 
 
@@ -260,9 +277,13 @@ frames = [df_icu_admission_times_1,df_icu_admission_times_2]
 
 df_icu_admission_combine = pd.concat(frames)
 
+df_icu_admission_combine.head(2)
+
 len(df_icu_admission_combine)
 
+df_icu_admission_combine.shape
 
+df_icu_admission_combine.head()
 ## shuffle rows
 df_icu_admission_combine = df_icu_admission_combine.sample(frac=1).reset_index(drop=True)
 
