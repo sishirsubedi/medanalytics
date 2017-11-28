@@ -33,7 +33,7 @@ cormat_melted.head(5)
 cormat_melted_filt = cormat_melted.loc[(cormat_melted['values']>=0.80) & (cormat_melted['values'] !=1.0)]
 todrop = set(cormat_melted_filt['f2'])
 len(todrop)
-
+## drop 45
 
 df_all_data.drop(todrop, axis=1, inplace=True)
 

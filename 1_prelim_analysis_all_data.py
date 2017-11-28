@@ -14,21 +14,21 @@ df_all_data.head(2)
 
 len(df_all_data)
 
-df_all_data['admittime'].isnull().value_counts()
-df_all_data['marital_status'].isnull().value_counts()
-df_all_data['gender'].isnull().value_counts()
-df_all_data['gender'].value_counts()
-df_all_data['marital_status'].value_counts()
-
-
-print df_all_data.T.apply(lambda x: x.nunique(), axis=1)
+# df_all_data['admittime'].isnull().value_counts()
+# df_all_data['marital_status'].isnull().value_counts()
+# df_all_data['gender'].isnull().value_counts()
+# df_all_data['gender'].value_counts()
+# df_all_data['marital_status'].value_counts()
+#
+#
+# print df_all_data.T.apply(lambda x: x.nunique(), axis=1)
 
 
 numeric_columns = df_all_data._get_numeric_data().columns
 categorical_columns = list(set(df_all_data.columns)-set(numeric_columns))
 df_all_data[categorical_columns].isnull().sum()*100/df_all_data.shape[0]
 # here we see that 5% of marital status is missing
-df_all_data['marital_status'].value_counts()
+#df_all_data['marital_status'].value_counts()
 
 
 
@@ -205,9 +205,9 @@ df_icu_admission_times_2.shape
 icu_admissionid_only_1 = [k for k in patient_freq if patient_freq[k] ==1]
 len(icu_admissionid_only_1)
 
-#random.seed(1)
-# icu_admissionid_only_1 = random.sample(icu_admissionid_only_1, len(df_icu_admission_times_2))
-# len(icu_admissionid_only_1)
+random.seed(1)
+icu_admissionid_only_1 = random.sample(icu_admissionid_only_1, len(df_icu_admission_times_2))
+len(icu_admissionid_only_1)
 
 final_patients_control =[]
 icu_admission_times_1 =[]
@@ -255,7 +255,7 @@ df_icu_admission_times_1= pd.get_dummies(df_icu_admission_times_1,columns=['gend
 df_icu_admission_times_1.head(2)
 df_icu_admission_times_1.drop(['marital_status_UNKNOWN(DEFAULT)'], axis=1, inplace=True)
 
-df_icu_admission_times_1.drop(['marital_status_LIFEPARTNER'], axis=1, inplace=True)
+#df_icu_admission_times_1.drop(['marital_status_LIFEPARTNER'], axis=1, inplace=True)
 
 df_icu_admission_times_1['readmit'] = 0.0
 df_icu_admission_times_1.head(2)
